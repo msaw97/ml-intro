@@ -131,8 +131,20 @@ res.append(fit_regression(X2_ucz70, X2_test70, y_ucz70, y_test70))
 
 results = pd.DataFrame(res, index=params)
 
+#redukcja zmiennych modelu
+#szukamy równowagi pomiędzy złożonością modelu a jego jakością
+#korzystamy z kryterium Schwarza (BIC - Bayesian Information Criterion)
+#MSE_p jest liczone dla modelu zbudowanego na podstawie p<=d zmiennych
+#p*log(n) to kara za złożoność modelu
+
 def BIC(mse, p, n):
     return n*np.log(mse) + p*np.log(n)
+
+#liczba wszystkich możliwych przypadków do rozpatrzenia jest rzędu 2^d
+#1. zaczynamy od modelu pustego. BIC wynosi +nieskończoność
+#2. rozszerzamy model o zmienną, dla której BIC jest najmniejsza i
+#   jednocześnie zmniejsza aktualną wartość BIC - jeśli takiej nie ma zwracamy aktualny model
+#3. powtarzamy 2. aż do wyczerpania możliwości
 
 def forward_selection(X, y):
     n, m = X.shape
@@ -169,3 +181,8 @@ res.append(fit_regression(X2_ucz70[:, wybrane_zmienne], X2_test70[:, wybrane_zmi
 results = pd.DataFrame(res, index=params)
 
 print(results)
+
+#wykres
+results.drop(["r_score_u", "r_score_t"], axis=1).plot(style=["-", ":", "--", "-."], color="k", figsize=(16,8))
+plt.xticks(np.arange(len(results.index.tolist())), results.index.tolist(), rotation=6)
+plt.show()
