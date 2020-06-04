@@ -1,4 +1,4 @@
-#Model regresji liniowej
+#Modele regresji liniowej i wielomianowej
 
 import numpy as np
 import pandas as pd
@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sklearn
 import sklearn.linear_model
+import sklearn.preprocessing
 
 wine = pd.read_csv("data/winequality-all.csv", comment="#")
 
@@ -106,5 +107,65 @@ params.append("Reg. liniowa 70 std")
 X_ucz70std, X_test70std, y_ucz70std, y_test70std = sklearn.model_selection.train_test_split(X_std, y_std, test_size=0.3, random_state=12345)
 res.append(fit_regression(X_ucz70std, X_test70std, y_ucz70std, y_test70std))
 
-reg = pd.DataFrame(res, index=params)
-print(reg)
+#model regresji wielomianowej
+
+#generuje nowe cechy, które są iloczynem cech bazowych
+wielomian2_cechy = sklearn.preprocessing.PolynomialFeatures(degree=2, include_bias=False)
+wielomian2_cechy = wielomian2_cechy.fit_transform(np.array([[2,3,5],[1,2,3]]))
+#print(wielomian2_cechy)
+
+wielomian2 = sklearn.preprocessing.PolynomialFeatures(degree=2, include_bias=False)
+X2_ucz = wielomian2.fit_transform(X_ucz)
+X2_test = wielomian2.fit_transform(X_test)
+
+wielomian2 = sklearn.preprocessing.PolynomialFeatures(degree=2, include_bias=False)
+X2_ucz70 = wielomian2.fit_transform(X_ucz70)
+X2_test70 = wielomian2.fit_transform(X_test70)
+
+#sprawdzenie działania modelu wielomianowego
+params.append("Reg. wielomianowa")
+res.append(fit_regression(X2_ucz, X2_test, y_ucz, y_test))
+
+params.append("Reg. wielomianowa 70")
+res.append(fit_regression(X2_ucz70, X2_test70, y_ucz70, y_test70))
+
+results = pd.DataFrame(res, index=params)
+
+def BIC(mse, p, n):
+    return n*np.log(mse) + p*np.log(n)
+
+def forward_selection(X, y):
+    n, m = X.shape
+    best_idx = []
+    best_free = set(range(m))
+    best_fit = np.inf
+    res = []
+    
+    for i in range(0, m):
+        cur_idx = -1
+        cur_fit = np.inf
+        for e in best_free:
+            r = sklearn.linear_model.LinearRegression()
+            test_idx = best_idx + [e]
+            r.fit(X[:, test_idx], y)
+            test_fit = BIC(sklearn.metrics.mean_squared_error(y, r.predict(X[:, test_idx])), i+2, n)
+            if test_fit < cur_fit: cur_idx, cur_fit = e, test_fit
+        if cur_fit > best_fit: break
+        
+        best_idx, best_fit = best_idx + [cur_idx], cur_fit
+        best_free.discard(cur_idx)
+        res.append((cur_idx, cur_fit))
+    return res
+
+
+print("\nOcena istotności zmiennych w modelu:")
+wybrane_df = pd.DataFrame(forward_selection(X2_ucz70, y_ucz70), columns=["zmienna", "BIC"])
+wybrane_zmienne = wybrane_df["zmienna"].tolist()
+wybrane_df["nazwa"] = [X.columns[w>=1].append(X.columns[w==2]).str.cat(sep="*") for w in wielomian2.powers_[wybrane_zmienne]]
+print(wybrane_df)
+
+params.append("Reg. wiel. 70 zmienne wybrane")
+res.append(fit_regression(X2_ucz70[:, wybrane_zmienne], X2_test70[:, wybrane_zmienne], y_ucz70, y_test70))
+results = pd.DataFrame(res, index=params)
+
+print(results)
