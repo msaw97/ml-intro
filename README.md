@@ -20,3 +20,6 @@
 - model klasyfikatora
 - klasyfikacja win ze względu na zmienną response metodą k-najbliższych sąsiadów
 - ocena jakości klasyfikatora według miar accuracy_score, precision_score, recall_score, f1_score
+- klasyfikacja za pomocą drzewa losowego
+- klasyfikacja za pomocą lasu losowego
+- określenie poziomu istotności zmiennych w lesie losowym

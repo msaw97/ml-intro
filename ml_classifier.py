@@ -6,6 +6,8 @@ import sklearn
 import sklearn.model_selection
 import sklearn.neighbors
 import sklearn.metrics
+import sklearn.tree
+import sklearn.ensemble
 
 
 print("CEL - klasyfikacja win ze względu na zmienną response\n")
@@ -89,3 +91,20 @@ m = X_ucz.mean(axis=0)
 s = X_ucz.std(axis=0, ddof=1)
 fc = pd.Series(fit_classifier(sklearn.neighbors.KNeighborsClassifier(n_neighbors=5), (X_ucz-m)/s, (X_test-m)/s, yk_ucz, yk_test))
 print(fc)
+
+
+print("\nModel drzewa decyzyjnego")
+
+my_tree = sklearn.tree.DecisionTreeClassifier()
+print(my_tree.fit(X_ucz, yk_ucz))
+
+print(pd.Series(fit_classifier(my_tree	, X_ucz, X_test, yk_ucz, yk_test)))
+
+print("\nLas losowy")
+forest = sklearn.ensemble.RandomForestClassifier(random_state=123)
+print(forest.fit(X_ucz, yk_ucz))
+
+print(pd.Series(fit_classifier(forest, X_ucz, X_test, yk_ucz, yk_test)))
+
+print("\nPoziom istotności zmiennych w lesie losowym")
+print(pd.Series(forest.feature_importances_, index = X.columns[0:11]).sort_values(ascending=False))
